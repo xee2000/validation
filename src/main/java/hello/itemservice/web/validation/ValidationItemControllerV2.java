@@ -105,23 +105,53 @@ public class ValidationItemControllerV2 {
 //    }
 //
 
+//    @PostMapping("/add")
+//    public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+//        Item savedItem = itemRepository.save(item);
+////        기존에는 만일 값을 잘못입력시 그값이 보존되지 않았지만 다른생성자를 활용하여 만일 값이없을경우 item.get으로 해당 값을 보존시킨다.
+//        if(!StringUtils.hasText(item.getItemName())){
+//            bindingResult.addError(new FieldError("item", "itemName",item.getItemName(), false, new String[] {"required.item.itemName"},null,null));
+//        }
+//        if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
+//            bindingResult.addError(new FieldError("item", "price",item.getPrice(),false,new String[] {"range.item.price"},new Object[]{1000,1000000},null));
+//        }
+//        if(item.getQuantity() == null || item.getQuantity() >= 9999){
+//            bindingResult.addError(new FieldError("item", "quantity",item.getQuantity(),false,new String[] {"max.item.quantity"},new Object[]{9999},null));
+//        }
+//        if(item.getPrice() != null && item.getQuantity() != null){
+//            int resultPrice = item.getPrice() * item.getQuantity();
+//            if(resultPrice < 10000){
+//                bindingResult.addError(new ObjectError("item",new String[]{"totalPriceMin"},new Object[]{10000, resultPrice}, null));
+//            }
+//        }
+////        에러가 존재하면?
+//        if(bindingResult.hasErrors()){
+//            log.info("error = {}", bindingResult);
+//            return "validation/v2/addForm";
+//        }
+//        redirectAttributes.addAttribute("itemId", savedItem.getId());
+//        redirectAttributes.addAttribute("status", true);
+//        return "redirect:/validation/v2/items/{itemId}";
+//    }
+
+
     @PostMapping("/add")
-    public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+    public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
         Item savedItem = itemRepository.save(item);
 //        기존에는 만일 값을 잘못입력시 그값이 보존되지 않았지만 다른생성자를 활용하여 만일 값이없을경우 item.get으로 해당 값을 보존시킨다.
         if(!StringUtils.hasText(item.getItemName())){
-            bindingResult.addError(new FieldError("item", "itemName",item.getItemName(), false, new String[] {"required.item.itemName"},null,null));
+            bindingResult.rejectValue("itemName","required");
         }
         if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
-            bindingResult.addError(new FieldError("item", "price",item.getPrice(),false,new String[] {"range.item.price"},new Object[]{1000,1000000},null));
+            bindingResult.rejectValue("price","range",new Object[]{1000,1000000},null);
         }
         if(item.getQuantity() == null || item.getQuantity() >= 9999){
-            bindingResult.addError(new FieldError("item", "quantity",item.getQuantity(),false,new String[] {"max.item.quantity"},new Object[]{9999},null));
+            bindingResult.rejectValue("quantity","max",new Object[]{9999},null);
         }
         if(item.getPrice() != null && item.getQuantity() != null){
             int resultPrice = item.getPrice() * item.getQuantity();
             if(resultPrice < 10000){
-                bindingResult.addError(new ObjectError("item",new String[]{"totalPriceMin"},new Object[]{10000, resultPrice}, null));
+                bindingResult.reject("totalPriceMin", new Object[]{10000,resultPrice},null);
             }
         }
 //        에러가 존재하면?
