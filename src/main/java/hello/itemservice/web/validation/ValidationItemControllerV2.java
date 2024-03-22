@@ -2,6 +2,7 @@ package hello.itemservice.web.validation;
 
 import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
+import hello.itemservice.web.ItemValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.bind.BindResult;
@@ -12,6 +13,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -26,6 +29,16 @@ import java.util.Map;
 public class ValidationItemControllerV2 {
 
     private final ItemRepository itemRepository;
+
+    private final ItemValidator itemValidator;
+
+//    검증기에 대한 어노테이션으로 사용한 컨트롤러에서만 사용가능
+//    해당 컨트롤러의 어떤 메서드가 실행되더라도 선행으로 init의 검증기가 작동하게 됨
+    @InitBinder
+    public void init (WebDataBinder dataBinder){
+        log.info("init binder {} " , dataBinder);
+        dataBinder.addValidators(itemValidator);
+    }
 
     @GetMapping
     public String items(Model model) {
@@ -136,30 +149,27 @@ public class ValidationItemControllerV2 {
 //    }
 
 
-    @PostMapping("/add")
-    public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
-        Item savedItem = itemRepository.save(item);
-//        기존에는 만일 값을 잘못입력시 그값이 보존되지 않았지만 다른생성자를 활용하여 만일 값이없을경우 item.get으로 해당 값을 보존시킨다.
-//        if문을 통해 값이 없을경우에 대해서 검증을 직접할수도 있지만
-//        if(!StringUtils.hasText(item.getItemName())){
-//            bindingResult.rejectValue("itemName","required");
+//    @PostMapping("/add")
+//    public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+//        Item savedItem = itemRepository.save(item);
+////        supports를 통해 Item들어온 객체가 맞는지 확인후 validate를 통해 검증처리를 진행
+//        if(itemValidator.supports(Item.class)){
+//            itemValidator.validate(item,bindingResult);
 //        }
-//        해당 메서드를 들어가보면 값이 없을대의 가정을 같이 포함해서 주게된다.
-        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "itemName","required");
+//
+//        if(bindingResult.hasErrors()){
+//            log.info("error = {}", bindingResult);
+//            return "validation/v2/addForm";
+//        }
+//        redirectAttributes.addAttribute("itemId", savedItem.getId());
+//        redirectAttributes.addAttribute("status", true);
+//        return "redirect:/validation/v2/items/{itemId}";
+//    }
 
-        if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
-            bindingResult.rejectValue("price","range",new Object[]{1000,1000000},null);
-        }
-        if(item.getQuantity() == null || item.getQuantity() >= 9999){
-            bindingResult.rejectValue("quantity","max",new Object[]{9999},null);
-        }
-        if(item.getPrice() != null && item.getQuantity() != null){
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if(resultPrice < 10000){
-                bindingResult.reject("totalPriceMin", new Object[]{10000,resultPrice},null);
-            }
-        }
-//        에러가 존재하면?
+    @PostMapping("/add")
+    public String addItemV5(@Validated @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+        Item savedItem = itemRepository.save(item);
+
         if(bindingResult.hasErrors()){
             log.info("error = {}", bindingResult);
             return "validation/v2/addForm";
