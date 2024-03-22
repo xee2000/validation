@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -139,9 +140,13 @@ public class ValidationItemControllerV2 {
     public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
         Item savedItem = itemRepository.save(item);
 //        기존에는 만일 값을 잘못입력시 그값이 보존되지 않았지만 다른생성자를 활용하여 만일 값이없을경우 item.get으로 해당 값을 보존시킨다.
-        if(!StringUtils.hasText(item.getItemName())){
-            bindingResult.rejectValue("itemName","required");
-        }
+//        if문을 통해 값이 없을경우에 대해서 검증을 직접할수도 있지만
+//        if(!StringUtils.hasText(item.getItemName())){
+//            bindingResult.rejectValue("itemName","required");
+//        }
+//        해당 메서드를 들어가보면 값이 없을대의 가정을 같이 포함해서 주게된다.
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "itemName","required");
+
         if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000){
             bindingResult.rejectValue("price","range",new Object[]{1000,1000000},null);
         }
